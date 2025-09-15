@@ -179,6 +179,30 @@ class Job:
             )
         self.constraints.append(Bond((id_1, resi_1, name_1), (id_2, resi_2, name_2)))
 
+    def add_disulfide_bond(
+        self, id_1: str, resi_1: int, id_2: str, resi_2: int
+    ) -> None:
+        """Add a disulfide bond constraint."""
+        seg_ids = self._get_current_ids()
+        if id_1 not in seg_ids or id_2 not in seg_ids:
+            raise ValueError(
+                f"Both chain IDs must be defined: {id_1}, {id_2}. "
+                f"Current IDs: {seg_ids}"
+            )
+        # check that both residues are cysteines
+        for seq in self.sequences:
+            if id_1 in seq.ids and isinstance(seq, ProteinChain):
+                if seq.sequence[resi_1 - 1] != "C":
+                    raise ValueError(
+                        f"Residue {resi_1} in chain {id_1} is not a cysteine."
+                    )
+            if id_2 in seq.ids and isinstance(seq, ProteinChain):
+                if seq.sequence[resi_2 - 1] != "C":
+                    raise ValueError(
+                        f"Residue {resi_2} in chain {id_2} is not a cysteine."
+                    )
+        self.constraints.append(Bond((id_1, resi_1, "SG"), (id_2, resi_2, "SG")))
+
     def add_pocket(
         self,
         binder: str,
