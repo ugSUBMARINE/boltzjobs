@@ -12,3 +12,15 @@ wheels/
 
 # MacOS files
 .DS_Store
+
+# Testing and coverage
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
