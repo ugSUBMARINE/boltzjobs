@@ -1,0 +1,22 @@
+version: 1
+sequences:
+  - protein:
+      id: A
+      sequence: MELAALCRWGLLLALLPPGAASTQVCTGTDMKLRLPASPETHLDMLRHLYQGCQVVQGNLELTYLPTNASLSFLQDIQEVQGYVLIAHNQVRQVPLQRLRIVRGTQLFEDNYALAVLDNGDPLNNTTPVTGASPGGLRELQLRSLTEILKGGVLIQRNPQLCYQDTILWKDIFHKNNQLALTLIDTNRSR
+  - protein:
+      id: H
+      sequence: EVQLVESGGGLVQPGGSLRLSCAASGFNIKDTYIHWVRQAPGKGLEWVARIYPTNGYTRYADSVKGRFTISADTSKNTAYLQMNSLRAEDTAVYYCSRWGGDGFYAMDYWGQGTLVTVSS
+  - ligand:
+      id: L
+      smiles: 'CC(=O)N[C@@H](C)C(=O)O'
+constraints:
+  - pocket:
+      binder: L
+      contacts: [[A, 8], [A, 12]]
+      max_distance: 6.0
+templates:
+  - cif: templates/1n8z.cif
+    chain_id: A
+properties:
+  - affinity:
+      binder: L
