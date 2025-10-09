@@ -183,23 +183,30 @@ class Job:
         self, id_1: str, resi_1: int, id_2: str, resi_2: int
     ) -> None:
         """Add a disulfide bond constraint."""
-        seg_ids = self._get_current_ids()
-        if id_1 not in seg_ids or id_2 not in seg_ids:
-            raise ValueError(
-                f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
-            )
-        # check that both residues are cysteines
+        # Check that both residues are cysteines
+        chain_1_found = False
+        chain_2_found = False
         for seq in self.sequences:
-            if id_1 in seq.ids and isinstance(seq, ProteinChain):
-                if seq.sequence[resi_1 - 1] != "C":
-                    raise ValueError(
-                        f"Residue {resi_1} in chain {id_1} is not a cysteine."
-                    )
-            if id_2 in seq.ids and isinstance(seq, ProteinChain):
-                if seq.sequence[resi_2 - 1] != "C":
-                    raise ValueError(
-                        f"Residue {resi_2} in chain {id_2} is not a cysteine."
-                    )
+            if isinstance(seq, ProteinChain):
+                if id_1 in seq.ids:
+                    chain_1_found = True
+                    if seq.sequence[resi_1 - 1] != "C":
+                        raise ValueError(
+                            f"Residue {resi_1} in chain {id_1} is not a cysteine."
+                        )
+                if id_2 in seq.ids:
+                    chain_2_found = True
+                    if seq.sequence[resi_2 - 1] != "C":
+                        raise ValueError(
+                            f"Residue {resi_2} in chain {id_2} is not a cysteine."
+                        )
+        if not chain_1_found or not chain_2_found:
+            raise ValueError("One or both chain IDs not found as ProteinChain.")
+        if id_1 == id_2 and resi_1 == resi_2:
+            raise ValueError(
+                f"Cannot form a disulfide bond with the same residue. {id_1}-{resi_1}, {id_2}-{resi_2}"
+            )
+
         self.constraints.append(Bond((id_1, resi_1, "SG"), (id_2, resi_2, "SG")))
 
     def add_pocket(
@@ -210,19 +217,19 @@ class Job:
         force: bool = False,
     ) -> Pocket:
         """Add a pocket constraint for any sequence with the given binder ID.
-        
+
         The binder can be a molecule, protein, DNA or RNA as per Boltz-2 schema.
         """
         if contact_tokens is None:
             contact_tokens = []
-        
+
         # Check if binder ID exists in any sequence
         seg_ids = self._get_current_ids()
         if binder not in seg_ids:
             raise ValueError(
                 f"No sequence with id '{binder}' found. Available IDs: {seg_ids}"
             )
-        
+
         pocket = Pocket(
             binder, contacts=contact_tokens, max_distance=max_distance, force=force
         )
@@ -244,7 +251,9 @@ class Job:
             raise ValueError(
                 f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
             )
-        contact = Contact((id_1, resi_1), (id_2, resi_2), max_distance=max_distance, force=force)
+        contact = Contact(
+            (id_1, resi_1), (id_2, resi_2), max_distance=max_distance, force=force
+        )
         self.constraints.append(contact)
         return contact
 

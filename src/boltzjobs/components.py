@@ -74,7 +74,7 @@ class Pocket:
     contacts: list[Token] = field(default_factory=list)
     max_distance: float = 6.0
     force: bool = False
-    
+
     def __post_init__(self) -> None:
         """Validate distance parameter."""
         validate_distance(self.max_distance)
@@ -128,7 +128,7 @@ class Contact:
     token2: Token
     max_distance: float = 6.0
     force: bool = False
-    
+
     def __post_init__(self) -> None:
         """Validate distance parameter."""
         validate_distance(self.max_distance)
@@ -173,8 +173,8 @@ class SequenceModification:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
-            data.get("ccd", ""),  # type: ignore
-            data.get("position", 1),  # type: ignore
+            data.get("ccd", ""),
+            data.get("position", 1),
         )
 
 

@@ -9,7 +9,7 @@ from typing import Any, Generator, override
 import yaml
 
 
-class FlowStyleList(list):
+class FlowStyleList(list[Any]):
     """A custom list class to represent lists in YAML's flow style."""
 
     pass
@@ -30,12 +30,16 @@ class IndentedDumper(yaml.SafeDumper):
         return super().increase_indent(flow, False)
 
 
-def flow_style_list_representer(dumper: yaml.SafeDumper, data: Any):
+def flow_style_list_representer(
+    dumper: yaml.SafeDumper, data: Any
+) -> yaml.nodes.SequenceNode:
     """Represents a Python list in YAML's flow style (e.g., [A, B, C])."""
     return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
 
 
-def single_quoted_representer(dumper: yaml.SafeDumper, data: Any):
+def single_quoted_representer(
+    dumper: yaml.SafeDumper, data: Any
+) -> yaml.nodes.ScalarNode:
     """Represents a string in YAML with single quotes."""
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'")
 
@@ -47,18 +51,20 @@ IndentedDumper.add_representer(SingleQuoted, single_quoted_representer)
 
 def validate_distance(distance: float, parameter_name: str = "max_distance") -> None:
     """Validate that distance falls within supported range (4-20Å).
-    
+
     Args:
         distance: Distance value to validate
         parameter_name: Name of the parameter for error messages
-        
+
     Raises:
         ValueError: If distance is outside the 4-20Å range
         TypeError: If distance is not a number
     """
     if not isinstance(distance, (int, float)):
-        raise TypeError(f"{parameter_name} must be a number, got {type(distance).__name__}")
-    
+        raise TypeError(
+            f"{parameter_name} must be a number, got {type(distance).__name__}"
+        )
+
     if not (4.0 <= distance <= 20.0):
         raise ValueError(
             f"{parameter_name} must be between 4.0 and 20.0 Å, got {distance:.2f} Å"
@@ -101,10 +107,12 @@ def get_msa_from_json(
     for entry in data["sequences"]:
         if chain := entry.get("protein"):
             if chain["sequence"] == sequence:
-                return chain["unpairedMsa"] if not paired else chain["pairedMsa"]
+                return (
+                    str(chain["unpairedMsa"]) if not paired else str(chain["pairedMsa"])
+                )
         if chain := entry.get("rna"):
             if chain["sequence"] == sequence:
-                return chain["unpairedMsa"]
+                return str(chain["unpairedMsa"])
 
     return None
 
