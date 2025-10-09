@@ -13,7 +13,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass, field
 from itertools import islice
-from typing import Any, Self, Type
+from typing import Any, Self, override
 
 import yaml
 
@@ -52,6 +52,7 @@ class Job:
         # Initialize the chain ID generator
         self._chain_ids = chain_id()
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the job."""
         lines = [
@@ -174,8 +175,7 @@ class Job:
         seg_ids = self._get_current_ids()
         if id_1 not in seg_ids or id_2 not in seg_ids:
             raise ValueError(
-                f"Both chain IDs must be defined: {id_1}, {id_2}. "
-                f"Current IDs: {seg_ids}"
+                f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
             )
         self.constraints.append(Bond((id_1, resi_1, name_1), (id_2, resi_2, name_2)))
 
@@ -186,8 +186,7 @@ class Job:
         seg_ids = self._get_current_ids()
         if id_1 not in seg_ids or id_2 not in seg_ids:
             raise ValueError(
-                f"Both chain IDs must be defined: {id_1}, {id_2}. "
-                f"Current IDs: {seg_ids}"
+                f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
             )
         # check that both residues are cysteines
         for seq in self.sequences:
@@ -236,8 +235,7 @@ class Job:
         seg_ids = self._get_current_ids()
         if id_1 not in seg_ids or id_2 not in seg_ids:
             raise ValueError(
-                f"Both chain IDs must be defined: {id_1}, {id_2}. "
-                f"Current IDs: {seg_ids}"
+                f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
             )
         self.constraints.append(
             Contact((id_1, resi_1), (id_2, resi_2), max_distance=max_distance)
@@ -308,20 +306,20 @@ class Job:
     @classmethod
     def from_yaml(cls, filename: str, jobname: str = "boltz_job") -> Self:
         """Read a job from a YAML file."""
-        sequence_match: dict[str, Type[Sequence]] = {
+        sequence_match: dict[str, type[Sequence]] = {
             "protein": ProteinChain,
             "dna": DnaChain,
             "rna": RnaChain,
             "ligand": Ligand,
         }
 
-        constraint_match: dict[str, Type[Constraint]] = {
+        constraint_match: dict[str, type[Constraint]] = {
             "bond": Bond,
             "contact": Contact,
             "pocket": Pocket,
         }
 
-        property_match: dict[str, Type[Property]] = {
+        property_match: dict[str, type[Property]] = {
             "affinity": Affinity,
         }
 

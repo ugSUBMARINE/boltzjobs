@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from itertools import product
-from typing import Any, Generator
+from typing import Any, Generator, override
 
 import yaml
 
@@ -24,6 +24,7 @@ class SingleQuoted(str):
 class IndentedDumper(yaml.SafeDumper):
     """A custom dumper to force indentation on list items."""
 
+    @override
     def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
         # return super(IndentedDumper, self).increase_indent(flow, False)
         return super().increase_indent(flow, False)
@@ -80,12 +81,10 @@ def get_msa_from_json(
     for entry in data["sequences"]:
         if chain := entry.get("protein"):
             if chain["sequence"] == sequence:
-                msa: str = chain["unpairedMsa"] if not paired else chain["pairedMsa"]
-                return msa
+                return chain["unpairedMsa"] if not paired else chain["pairedMsa"]
         if chain := entry.get("rna"):
             if chain["sequence"] == sequence:
-                msa = chain["unpairedMsa"]
-                return msa
+                return chain["unpairedMsa"]
 
     return None
 

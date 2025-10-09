@@ -7,7 +7,7 @@ for Boltz-2.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Self
+from typing import Any, Self, override
 
 from .utils import (
     FlowStyleList,
@@ -23,6 +23,7 @@ Token = tuple[str, int | str]  # [CHAIN_ID, RES_IDX/ATOM_NAME]
 class Affinity:
     binder: str
 
+    @override
     def __str__(self) -> str:
         return f"++ Affinity for ligand: {self.binder}"
 
@@ -43,6 +44,7 @@ class Bond:
     atom1: Atom
     atom2: Atom
 
+    @override
     def __str__(self) -> str:
         return f"++ Bond between {self.atom1} - {self.atom2}"
 
@@ -71,6 +73,7 @@ class Pocket:
     contacts: list[Token] = field(default_factory=list)
     max_distance: float = 5.0
 
+    @override
     def __str__(self) -> str:
         lines = [
             f"++ Pocket for binder: {self.binder}",
@@ -115,6 +118,7 @@ class Contact:
     token2: Token
     max_distance: float = 5.0
 
+    @override
     def __str__(self) -> str:
         return f"++ Contact between {self.token1} - {self.token2}, max distance: {self.max_distance:.2f} Å"
 
@@ -144,14 +148,15 @@ class SequenceModification:
     mod_type: str  # modification type
     position: int  # position of the modification (1-based)
 
+    @override
     def __str__(self) -> str:
         return f"   Modification: {self.mod_type} at position {self.position}"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
-            data.get("mad_type"),  # type: ignore
-            data.get("position"),  # type: ignore
+            data.get("mod_type", ""),  # type: ignore
+            data.get("position", 1),  # type: ignore
         )
 
 
@@ -163,6 +168,7 @@ class Template:
     chain_id: list[str] = field(default_factory=list)
     template_id: list[str] = field(default_factory=list)
 
+    @override
     def __str__(self) -> str:
         lines = [
             f"    {self.cif!r}",
@@ -224,6 +230,7 @@ class Chain:
         if not self.sequence:
             raise ValueError("Sequence cannot be empty.")
 
+    @override
     def __str__(self) -> str:
         if len(self.sequence) > 25:
             seq = f"{self.sequence[:10]}.....{self.sequence[-10:]}"
@@ -301,6 +308,7 @@ class ProteinChain(Chain):
                 f"Protein sequence contains invalid one-letter codes: {', '.join(repr(b) for b in sorted(diff))}."
             )
 
+    @override
     def __str__(self) -> str:
         lines = [
             "++ Protein chain:",
@@ -317,6 +325,7 @@ class ProteinChain(Chain):
         self.msa = path
         return self
 
+    @override
     def to_dict(self) -> dict[str, Any]:
         """Convert the protein chain to a dictionary."""
         d = super().to_dict()
@@ -325,6 +334,7 @@ class ProteinChain(Chain):
 
         return {"protein": d}
 
+    @override
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create a ProteinChain instance from a dictionary."""
@@ -350,6 +360,7 @@ class DnaChain(Chain):
                 f"DNA sequence can only contain 'A', 'C', 'G', or 'T'. Found {', '.join(repr(b) for b in sorted(diff))}."
             )
 
+    @override
     def __str__(self) -> str:
         lines = [
             "++ DNA chain:",
@@ -357,11 +368,13 @@ class DnaChain(Chain):
         ]
         return "\n".join(lines)
 
+    @override
     def to_dict(self) -> dict[str, Any]:
         """Convert the DNA chain to a dictionary."""
         d = super().to_dict()
         return {"dna": d}
 
+    @override
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create a ProteinChain instance from a dictionary."""
@@ -386,6 +399,7 @@ class RnaChain(Chain):
                 f"RNA sequence can only contain 'A', 'C', 'G', or 'U'. Found {', '.join(repr(b) for b in sorted(diff))}."
             )
 
+    @override
     def __str__(self) -> str:
         lines = [
             "++ RNA chain:",
@@ -393,11 +407,13 @@ class RnaChain(Chain):
         ]
         return "\n".join(lines)
 
+    @override
     def to_dict(self) -> dict[str, Any]:
         """Convert the RNA chain to a dictionary."""
         d = super().to_dict()
         return {"rna": d}
 
+    @override
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create a ProteinChain instance from a dictionary."""
@@ -418,6 +434,7 @@ class Ligand:
     ccd: None | str = None
     smiles: str = ""
 
+    @override
     def __str__(self) -> str:
         lines = [
             "++ Ligand:",
