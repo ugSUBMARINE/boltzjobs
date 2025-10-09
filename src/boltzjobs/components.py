@@ -145,17 +145,17 @@ class Contact:
 class SequenceModification:
     """Base class for sequence modifications."""
 
-    mod_type: str  # modification type
+    ccd: str  # modification type
     position: int  # position of the modification (1-based)
 
     @override
     def __str__(self) -> str:
-        return f"   Modification: {self.mod_type} at position {self.position}"
+        return f"   Modification: {self.ccd} at position {self.position}"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
-            data.get("mod_type", ""),  # type: ignore
+            data.get("ccd", ""),  # type: ignore
             data.get("position", 1),  # type: ignore
         )
 
@@ -245,9 +245,9 @@ class Chain:
         lines.extend(str(m) for m in self.modifications)
         return "\n".join(lines)
 
-    def add_modification(self, mod_type: str, position: int) -> Self:
+    def add_modification(self, ccd: str, position: int) -> Self:
         """Add a modification to the chain."""
-        mod = SequenceModification(mod_type, position)
+        mod = SequenceModification(ccd, position)
         self.modifications.append(mod)
         return self
 
@@ -266,8 +266,7 @@ class Chain:
 
         if self.modifications:
             d["modifications"] = [
-                {"position": mod.position, "ccd": mod.mod_type}
-                for mod in self.modifications
+                {"position": mod.position, "ccd": mod.ccd} for mod in self.modifications
             ]
 
         if self.cyclic:
