@@ -45,6 +45,26 @@ IndentedDumper.add_representer(FlowStyleList, flow_style_list_representer)
 IndentedDumper.add_representer(SingleQuoted, single_quoted_representer)
 
 
+def validate_distance(distance: float, parameter_name: str = "max_distance") -> None:
+    """Validate that distance falls within supported range (4-20Å).
+    
+    Args:
+        distance: Distance value to validate
+        parameter_name: Name of the parameter for error messages
+        
+    Raises:
+        ValueError: If distance is outside the 4-20Å range
+        TypeError: If distance is not a number
+    """
+    if not isinstance(distance, (int, float)):
+        raise TypeError(f"{parameter_name} must be a number, got {type(distance).__name__}")
+    
+    if not (4.0 <= distance <= 20.0):
+        raise ValueError(
+            f"{parameter_name} must be between 4.0 and 20.0 Å, got {distance:.2f} Å"
+        )
+
+
 def chain_id(letters: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") -> Generator[str, None, None]:
     """
     Generator function to yield mmCIF chain IDs.

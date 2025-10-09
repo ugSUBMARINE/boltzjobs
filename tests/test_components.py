@@ -533,9 +533,9 @@ class TestContact:
 
     @pytest.mark.unit
     def test_contact_creation_default_distance(self):
-        """Test Contact creation with default distance."""
+        """Test contact creation with default distance."""
         contact = Contact(("A", 1), ("B", 2))
-        assert contact.max_distance == 5.0
+        assert contact.max_distance == 6.0
 
     @pytest.mark.unit
     def test_contact_str(self, contact):
@@ -582,11 +582,11 @@ class TestPocket:
 
     @pytest.mark.unit
     def test_pocket_creation_defaults(self):
-        """Test Pocket creation with defaults."""
+        """Test pocket creation with defaults."""
         pocket = Pocket("L")
+        assert pocket.binder == "L"
         assert pocket.contacts == []
-        assert pocket.max_distance == 5.0
-
+        assert pocket.max_distance == 6.0
     @pytest.mark.unit
     def test_pocket_str(self, pocket):
         """Test Pocket string representation."""

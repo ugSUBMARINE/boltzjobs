@@ -297,8 +297,9 @@ class TestCompleteWorkflows:
         with pytest.raises(ValueError, match="Both chain IDs must be defined"):
             job.add_bond("X", 1, "CA", "Y", 1, "CB")
 
-        with pytest.raises(ValueError, match="Pocket can only be defined for ligands"):
-            job.add_pocket("A")  # Try to define pocket for protein
+        # Pocket constraints now work for any sequence type, test invalid ID instead
+        with pytest.raises(ValueError, match="No sequence with id 'Z' found"):
+            job.add_pocket("Z")  # Try to define pocket for non-existent ID
 
         with pytest.raises(
             ValueError, match="Affinity can only be estimated for ligands"

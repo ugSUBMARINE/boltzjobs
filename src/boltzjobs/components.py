@@ -12,6 +12,7 @@ from typing import Any, Self, override
 from .utils import (
     FlowStyleList,
     SingleQuoted,
+    validate_distance,
 )
 
 # type definitions
@@ -71,7 +72,12 @@ class Pocket:
 
     binder: str
     contacts: list[Token] = field(default_factory=list)
-    max_distance: float = 5.0
+    max_distance: float = 6.0
+    force: bool = False
+    
+    def __post_init__(self) -> None:
+        """Validate distance parameter."""
+        validate_distance(self.max_distance)
 
     @override
     def __str__(self) -> str:
@@ -79,6 +85,8 @@ class Pocket:
             f"++ Pocket for binder: {self.binder}",
             f"   Max distance: {self.max_distance:.2f} Å",
         ]
+        if self.force:
+            lines.append("   Force: True")
         if self.contacts:
             lines.append("   Contacts:")
             for chain_id, res_idx_or_atom_name in self.contacts:
@@ -93,21 +101,23 @@ class Pocket:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the pocket to a dictionary."""
-        return {
-            "pocket": {
-                "binder": self.binder,
-                "contacts": FlowStyleList(self.contacts),
-                "max_distance": self.max_distance,
-            }
+        d: dict[str, Any] = {
+            "binder": self.binder,
+            "contacts": FlowStyleList(self.contacts),
+            "max_distance": self.max_distance,
         }
+        if self.force:
+            d["force"] = self.force
+        return {"pocket": d}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create a Pocket instance from a dictionary."""
         binder = data.get("binder", "")
         contacts = data.get("contacts", [])
-        max_distance = data.get("max_distance", 5.0)
-        return cls(binder, contacts, max_distance)
+        max_distance = data.get("max_distance", 6.0)
+        force = data.get("force", False)
+        return cls(binder, contacts, max_distance, force)
 
 
 @dataclass
@@ -116,29 +126,37 @@ class Contact:
 
     token1: Token
     token2: Token
-    max_distance: float = 5.0
+    max_distance: float = 6.0
+    force: bool = False
+    
+    def __post_init__(self) -> None:
+        """Validate distance parameter."""
+        validate_distance(self.max_distance)
 
     @override
     def __str__(self) -> str:
-        return f"++ Contact between {self.token1} - {self.token2}, max distance: {self.max_distance:.2f} Å"
+        force_str = ", force: True" if self.force else ""
+        return f"++ Contact between {self.token1} - {self.token2}, max distance: {self.max_distance:.2f} Å{force_str}"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the contact to a dictionary."""
-        return {
-            "contact": {
-                "token1": FlowStyleList(self.token1),
-                "token2": FlowStyleList(self.token2),
-                "max_distance": self.max_distance,
-            }
+        d: dict[str, Any] = {
+            "token1": FlowStyleList(self.token1),
+            "token2": FlowStyleList(self.token2),
+            "max_distance": self.max_distance,
         }
+        if self.force:
+            d["force"] = self.force
+        return {"contact": d}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create a Contact instance from a dictionary."""
         token1 = tuple(data.get("token1", []))
         token2 = tuple(data.get("token2", []))
-        max_distance = data.get("max_distance", 5.0)
-        return cls(token1, token2, max_distance)
+        max_distance = data.get("max_distance", 6.0)
+        force = data.get("force", False)
+        return cls(token1, token2, max_distance, force)
 
 
 @dataclass

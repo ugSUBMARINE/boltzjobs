@@ -360,18 +360,19 @@ class TestJobAddConstraints:
         assert pocket is basic_job.constraints[0]
     
     @pytest.mark.unit
-    def test_add_pocket_non_ligand_binder(self, sample_protein_sequence):
-        """Test adding pocket with non-ligand binder raises error."""
+    def test_add_pocket_allows_all_sequence_types(self, sample_protein_sequence):
+        """Test adding pocket now works for all sequence types."""
         job = Job()
         job.add_protein_chain(sample_protein_sequence, ids="A")
         
-        with pytest.raises(ValueError, match="Pocket can only be defined for ligands"):
-            job.add_pocket("A")
+        # Should now work for protein chains (changed behavior)
+        pocket = job.add_pocket("A")
+        assert pocket.binder == "A"
     
     @pytest.mark.unit
     def test_add_pocket_non_existent_binder(self, basic_job):
         """Test adding pocket with non-existent binder raises error."""
-        with pytest.raises(ValueError, match="No ligand with id X found"):
+        with pytest.raises(ValueError, match="No sequence with id 'X' found"):
             basic_job.add_pocket("X")
 
 

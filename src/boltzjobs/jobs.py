@@ -206,22 +206,28 @@ class Job:
         self,
         binder: str,
         contact_tokens: None | list[tuple[str, int | str]] = None,
-        max_distance: float = 5.0,
+        max_distance: float = 6.0,
+        force: bool = False,
     ) -> Pocket:
-        """Add a pocket constraint for a ligand with the given binder ID."""
+        """Add a pocket constraint for any sequence with the given binder ID.
+        
+        The binder can be a molecule, protein, DNA or RNA as per Boltz-2 schema.
+        """
         if contact_tokens is None:
             contact_tokens = []
-        for seq in self.sequences:
-            if binder in seq.ids and isinstance(seq, Ligand):
-                pocket = Pocket(
-                    binder, contacts=contact_tokens, max_distance=max_distance
-                )
-                self.constraints.append(pocket)
-                return pocket
-        else:
+        
+        # Check if binder ID exists in any sequence
+        seg_ids = self._get_current_ids()
+        if binder not in seg_ids:
             raise ValueError(
-                f"Pocket can only be defined for ligands. No ligand with id {binder} found."
+                f"No sequence with id '{binder}' found. Available IDs: {seg_ids}"
             )
+        
+        pocket = Pocket(
+            binder, contacts=contact_tokens, max_distance=max_distance, force=force
+        )
+        self.constraints.append(pocket)
+        return pocket
 
     def add_contact(
         self,
@@ -229,17 +235,18 @@ class Job:
         resi_1: int | str,
         id_2: str,
         resi_2: int | str,
-        max_distance: float = 5.0,
-    ) -> None:
-        """Add a bond constraint."""
+        max_distance: float = 6.0,
+        force: bool = False,
+    ) -> Contact:
+        """Add a contact constraint between two sequence positions."""
         seg_ids = self._get_current_ids()
         if id_1 not in seg_ids or id_2 not in seg_ids:
             raise ValueError(
                 f"Both chain IDs must be defined: {id_1}, {id_2}. Current IDs: {seg_ids}"
             )
-        self.constraints.append(
-            Contact((id_1, resi_1), (id_2, resi_2), max_distance=max_distance)
-        )
+        contact = Contact((id_1, resi_1), (id_2, resi_2), max_distance=max_distance, force=force)
+        self.constraints.append(contact)
+        return contact
 
     def add_template(
         self,
