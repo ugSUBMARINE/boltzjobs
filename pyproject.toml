@@ -56,11 +56,6 @@ exclude = [
 [tool.hatch.build.targets.wheel]
 # Ensure proper package structure in wheel
 packages = ["src/boltzjobs"]
-exclude = [
-    "/examples",
-    "/tests",
-    "/todos",
-]
 
 [dependency-groups]
 dev = [
