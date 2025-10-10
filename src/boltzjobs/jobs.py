@@ -376,15 +376,64 @@ class Job:
         )
 
     def request_affinity(self, binder: str) -> None:
-        """Request an affinity estimation for a ligand with the given binder ID."""
+        """Request an affinity estimation for a ligand with the given binder ID.
+        
+        Args:
+            binder: Chain ID of the ligand to compute affinity for
+            
+        Raises:
+            ValueError: If binder is not a ligand, if affinity already requested,
+                       or if no ligand with the specified ID is found
+                       
+        Warnings:
+            Issues warnings if non-protein targets are present, as this may
+            produce unreliable affinity results according to Boltz-2 schema
+        """
+        # Check if affinity computation has already been requested
+        existing_affinities = [prop for prop in self.properties if isinstance(prop, Affinity)]
+        if existing_affinities:
+            raise ValueError(
+                f"Only one affinity computation allowed per job. "
+                f"Affinity already requested for: {existing_affinities[0].binder}"
+            )
+        
+        # Find the ligand with the specified binder ID
+        binder_ligand = None
         for seq in self.sequences:
             if binder in seq.ids and isinstance(seq, Ligand):
-                self.properties.append(Affinity(binder))
+                binder_ligand = seq
                 break
-        else:
+        
+        if binder_ligand is None:
             raise ValueError(
-                f"Affinity can only be estimated for ligands. No ligand with id {binder} found."
+                f"Affinity can only be estimated for ligands. No ligand with id '{binder}' found."
             )
+        
+        # Check for protein targets and issue warnings for non-protein targets
+        non_ligand_sequences = [seq for seq in self.sequences if not isinstance(seq, Ligand)]
+        protein_targets = [seq for seq in non_ligand_sequences if isinstance(seq, ProteinChain)]
+        non_protein_targets = [seq for seq in non_ligand_sequences if not isinstance(seq, ProteinChain)]
+        
+        if not protein_targets:
+            warnings.warn(
+                "No protein chains found in job. Affinity computation without protein "
+                "targets may produce unreliable results.",
+                UserWarning,
+                stacklevel=2
+            )
+        
+        if non_protein_targets:
+            target_types = [type(seq).__name__ for seq in non_protein_targets]
+            warnings.warn(
+                f"Non-protein targets detected: {', '.join(target_types)}. "
+                "Affinity computation with DNA/RNA targets may produce unreliable results "
+                "according to Boltz-2 schema.",
+                UserWarning,
+                stacklevel=2
+            )
+        
+        # Add the affinity property
+        self.properties.append(Affinity(binder))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the Job to a dictionary suitable for JSON serialization."""

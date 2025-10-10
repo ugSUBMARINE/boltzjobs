@@ -440,7 +440,7 @@ class TestJobRequestAffinity:
     @pytest.mark.unit
     def test_request_affinity_non_existent_ligand(self, basic_job):
         """Test requesting affinity for non-existent ligand raises error."""
-        with pytest.raises(ValueError, match="No ligand with id X found"):
+        with pytest.raises(ValueError, match="No ligand with id 'X' found"):
             basic_job.request_affinity("X")
 
 
