@@ -5,10 +5,10 @@ description = "Module for defining molecular components, modifications, and job 
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "MIT"}
 authors = [
-    {name = "Karl Gruber", email = "karl.gruber@uni-graz.at"},
+    {name = "Karl Gruber", email = "gammaturn@gmail.com"},
 ]
 maintainers = [
-    {name = "Karl Gruber", email = "karl.gruber@uni-graz.at"},
+    {name = "Karl Gruber", email = "gammaturn@gmail.com"},
 ]
 keywords = ["Boltz-2", "molecular biology", "protein modeling", "bioinformatics", "structural biology", "YAML"]
 classifiers = [
@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
@@ -41,7 +42,7 @@ include = [
     "/src",
     "/examples",
     "/README.md",
-    "/LICENSE.txt", 
+    "/LICENSE.txt",
     "/pyproject.toml",
 ]
 exclude = [
@@ -66,7 +67,7 @@ dev = [
     "mypy>=1.18.2",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
-    "twine>=6.2.0",
+    "ruff>=0.14.0",
     "types-pyyaml>=6.0.12.20250915",
 ]
 
