@@ -181,10 +181,10 @@ class SequenceModification:
 @dataclass
 class Template:
     """Represents a template structure for structure prediction.
-    
+
     Templates can be provided as either mmCIF (.cif) or PDB (.pdb) files.
     The cif and pdb fields are mutually exclusive - exactly one must be provided.
-    
+
     When force=True, the template structure is enforced during prediction
     using a potential function with the specified threshold distance.
     """
@@ -200,12 +200,14 @@ class Template:
         """Validate Template parameters."""
         # Check if both files are provided (mutually exclusive)
         if self.cif and self.pdb:
-            raise ValueError("'cif' and 'pdb' are mutually exclusive - provide only one")
-        
+            raise ValueError(
+                "'cif' and 'pdb' are mutually exclusive - provide only one"
+            )
+
         # Exactly one of cif or pdb must be provided (and not empty)
         if not self.cif and not self.pdb:
             raise ValueError("Either 'cif' or 'pdb' file path must be provided")
-        
+
         # If force is True, threshold must be specified
         if self.force and self.threshold is None:
             raise ValueError("'threshold' must be specified when 'force=True'")
@@ -219,28 +221,28 @@ class Template:
             file_info = f"PDB: {self.pdb!r}"
         else:
             file_info = "<no file specified>"
-            
+
         lines = [f"++ Template: {file_info}"]
-        
+
         if self.template_id:
             lines.append(f"   Template ID(s): {', '.join(self.template_id)}")
         if self.chain_id:
             lines.append(f"   For chain ID(s): {', '.join(self.chain_id)}")
         if self.force:
             lines.append(f"   Force: True (threshold: {self.threshold}Å)")
-            
+
         return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the template to a dictionary."""
         d: dict[str, Any] = {}
-        
+
         # Add the file path (either cif or pdb)
         if self.cif:
             d["cif"] = self.cif
         elif self.pdb:
             d["pdb"] = self.pdb
-            
+
         if self.chain_id:
             d["chain_id"] = (
                 FlowStyleList(self.chain_id)
@@ -254,7 +256,7 @@ class Template:
                 if len(self.template_id) > 1
                 else self.template_id[0]
             )
-            
+
         # Add force and threshold if applicable
         if self.force:
             d["force"] = self.force
@@ -268,29 +270,29 @@ class Template:
         """Create a Template instance from a dictionary."""
         cif = data.get("cif")
         pdb = data.get("pdb")
-        
+
         if chain_id := data.get("chain_id"):
             if isinstance(chain_id, str):
                 chain_id = [chain_id]
         else:
             chain_id = []
-            
+
         if template_id := data.get("template_id"):
             if isinstance(template_id, str):
                 template_id = [template_id]
         else:
             template_id = []
-            
+
         force = data.get("force", False)
         threshold = data.get("threshold")
-        
+
         return cls(
             cif=cif,
             pdb=pdb,
             chain_id=chain_id,
             template_id=template_id,
             force=force,
-            threshold=threshold
+            threshold=threshold,
         )
 
 
@@ -398,7 +400,24 @@ class ProteinChain(Chain):
         return "\n".join(lines)
 
     def set_msa_path(self, path: str) -> Self:
-        """Set the path to the unpaired MSA file. ONLY for AF3 input file version >= 2."""
+        """Set the path to the MSA file.
+        
+        Args:
+            path: Path to the MSA file or special mode selector:
+                - `.a3m` file: Standard MSA format for single protein chains
+                - `.csv` file: Multi-chain MSA format with two columns:
+                  - `sequence`: protein sequence
+                  - `key`: unique identifier for matching rows across chains
+                  (sequences with the same key are mutually aligned)
+                - "empty": Force single-sequence mode (not recommended, reduces accuracy)
+                
+        Returns:
+            Self for method chaining
+            
+        Note:
+            For multi-chain complexes, use CSV format to ensure proper MSA pairing
+            across protein chains via the `key` column matching system.
+        """
         self.msa = path
         return self
 

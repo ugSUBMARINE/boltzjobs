@@ -660,8 +660,8 @@ class TestTemplate:
         """Test Template string representation."""
         str_repr = str(template)
         assert "'test.cif'" in str_repr
-        assert "template id(s): X" in str_repr
-        assert "to be used for chain id(s): A" in str_repr
+        assert "Template ID(s): X" in str_repr
+        assert "For chain ID(s): A" in str_repr
 
     @pytest.mark.unit
     def test_template_to_dict_single_ids(self, template):

@@ -307,7 +307,7 @@ class TestCompleteWorkflows:
             job.request_affinity("A")  # Try to request affinity for protein
 
         # Test template validation
-        with pytest.raises(ValueError, match="CIF file must be provided"):
+        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
             job.add_template("")
 
         # Test ligand validation
@@ -430,21 +430,20 @@ class TestRealWorldScenarios:
             for residue in [52, 72, 94, 145, 147, 161, 172]:
                 pocket.add_contact_token("TARGET", residue)
 
-            # Request affinity calculation
-            job.request_affinity(drug_id)
+        # Request affinity calculation for only one drug (per Boltz-2 schema)
+        job.request_affinity("DRUG1")
 
         # Add known structure template
         job.add_template("kinase_apo.cif", chain_id="TARGET")
 
         job.write_yaml(temp_yaml_file)
 
-        # Note: The current implementation allows multiple affinity requests
-        # This would be caught when implementing the TODO validation items
         loaded_job = Job.from_yaml(temp_yaml_file, "loaded_drugs")
 
-        # Verify that all drugs were loaded (even though this violates spec)
+        # Verify that all drugs were loaded
         assert len(loaded_job.sequences) == 4  # 1 target + 3 drugs
-        assert len(loaded_job.properties) == 3  # 3 affinity requests
+        assert len(loaded_job.properties) == 1  # 1 affinity request (schema limit)
+        assert loaded_job.properties[0].binder == "DRUG1"
 
     @pytest.mark.integration
     def test_membrane_protein_scenario(self, temp_yaml_file):
