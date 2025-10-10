@@ -307,7 +307,9 @@ class TestCompleteWorkflows:
             job.request_affinity("A")  # Try to request affinity for protein
 
         # Test template validation
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             job.add_template("")
 
         # Test ligand validation

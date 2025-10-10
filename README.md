@@ -9,7 +9,7 @@ It provides an intuitive, object-oriented interface for defining molecular seque
 - Define **protein**, **DNA**, and **RNA chains** with support for residue modifications.
 - Add **ligands** using either CCD codes or SMILES strings.
 - Specify geometric **constraints**, including bonds, contacts, and binding pockets.
-- Define mmCIF files as **structural templates**.
+- Define mmCIF or PDB files as **structural templates**.
 - Request property calculations, such as **binding affinity**.
 
 ## Installation

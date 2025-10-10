@@ -1,6 +1,6 @@
 [project]
 name = "boltzjobs"
-version = "0.1.0"
+version = "0.2.0"
 description = "Module for defining molecular components, modifications, and job configurations for Boltz-2"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "MIT"}
@@ -53,4 +53,3 @@ markers = [
     "integration: Integration tests for complete workflows",
     "slow: Tests that take longer to run",
 ]
-

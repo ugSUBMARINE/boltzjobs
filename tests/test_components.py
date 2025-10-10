@@ -587,6 +587,7 @@ class TestPocket:
         assert pocket.binder == "L"
         assert pocket.contacts == []
         assert pocket.max_distance == 6.0
+
     @pytest.mark.unit
     def test_pocket_str(self, pocket):
         """Test Pocket string representation."""

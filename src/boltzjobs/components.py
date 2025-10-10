@@ -401,7 +401,7 @@ class ProteinChain(Chain):
 
     def set_msa_path(self, path: str) -> Self:
         """Set the path to the MSA file.
-        
+
         Args:
             path: Path to the MSA file or special mode selector:
                 - `.a3m` file: Standard MSA format for single protein chains
@@ -410,10 +410,10 @@ class ProteinChain(Chain):
                   - `key`: unique identifier for matching rows across chains
                   (sequences with the same key are mutually aligned)
                 - "empty": Force single-sequence mode (not recommended, reduces accuracy)
-                
+
         Returns:
             Self for method chaining
-            
+
         Note:
             For multi-chain complexes, use CSV format to ensure proper MSA pairing
             across protein chains via the `key` column matching system.

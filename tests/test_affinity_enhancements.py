@@ -23,7 +23,7 @@ class TestAffinityValidation:
         """Create a job with DNA, RNA, and ligand (no protein)."""
         job = Job("non_protein_test")
         job.add_dna_chain("ATCG", ids=["DNA"])
-        job.add_rna_chain("AUCG", ids=["RNA"]) 
+        job.add_rna_chain("AUCG", ids=["RNA"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
         return job
 
@@ -49,7 +49,7 @@ class TestAffinityValidation:
     def test_request_affinity_basic(self, basic_protein_ligand_job):
         """Test basic affinity request functionality."""
         basic_protein_ligand_job.request_affinity("LIG")
-        
+
         assert len(basic_protein_ligand_job.properties) == 1
         assert isinstance(basic_protein_ligand_job.properties[0], Affinity)
         assert basic_protein_ligand_job.properties[0].binder == "LIG"
@@ -72,9 +72,11 @@ class TestAffinityValidation:
         # First request should succeed
         basic_protein_ligand_job.request_affinity("LIG")
         assert len(basic_protein_ligand_job.properties) == 1
-        
+
         # Second request should fail
-        with pytest.raises(ValueError, match="Only one affinity computation allowed per job"):
+        with pytest.raises(
+            ValueError, match="Only one affinity computation allowed per job"
+        ):
             basic_protein_ligand_job.request_affinity("LIG")
 
     @pytest.mark.unit
@@ -84,23 +86,25 @@ class TestAffinityValidation:
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG1"])
         job.add_ligand(ccd="ATP", ids=["LIG2"])
-        
+
         # First request should succeed
         job.request_affinity("LIG1")
         assert len(job.properties) == 1
         assert job.properties[0].binder == "LIG1"
-        
+
         # Second request for different ligand should fail
         with pytest.raises(ValueError, match="Affinity already requested for: LIG1"):
             job.request_affinity("LIG2")
 
     @pytest.mark.unit
-    def test_request_affinity_with_protein_targets_no_warning(self, basic_protein_ligand_job):
+    def test_request_affinity_with_protein_targets_no_warning(
+        self, basic_protein_ligand_job
+    ):
         """Test affinity request with protein targets doesn't issue warnings."""
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             basic_protein_ligand_job.request_affinity("LIG")
-            
+
             # Should not have any warnings for protein targets
             assert len(w) == 0
 
@@ -110,7 +114,7 @@ class TestAffinityValidation:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             ligand_only_job.request_affinity("LIG1")
-            
+
             # Should have warning about no protein targets
             assert len(w) == 1
             assert "No protein chains found" in str(w[0].message)
@@ -123,18 +127,30 @@ class TestAffinityValidation:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             dna_rna_ligand_job.request_affinity("LIG")
-            
+
             # Should have two warnings: no protein + non-protein targets
             assert len(w) == 2
-            
+
             # Check no protein warning
-            no_protein_warning = next((warning for warning in w 
-                                     if "No protein chains found" in str(warning.message)), None)
+            no_protein_warning = next(
+                (
+                    warning
+                    for warning in w
+                    if "No protein chains found" in str(warning.message)
+                ),
+                None,
+            )
             assert no_protein_warning is not None
-            
+
             # Check non-protein targets warning
-            non_protein_warning = next((warning for warning in w 
-                                      if "Non-protein targets detected" in str(warning.message)), None)
+            non_protein_warning = next(
+                (
+                    warning
+                    for warning in w
+                    if "Non-protein targets detected" in str(warning.message)
+                ),
+                None,
+            )
             assert non_protein_warning is not None
             assert "DnaChain, RnaChain" in str(non_protein_warning.message)
             assert "may produce unreliable results" in str(non_protein_warning.message)
@@ -145,7 +161,7 @@ class TestAffinityValidation:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             mixed_targets_job.request_affinity("LIG")
-            
+
             # Should have one warning about non-protein targets (but not about missing protein)
             assert len(w) == 1
             warning = w[0]
@@ -159,11 +175,11 @@ class TestAffinityValidation:
         job = Job("preserve_test")
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
-        
+
         # Manually add a non-affinity property (simulating future property types)
         # Since we only have Affinity now, we'll test the general case
         job.request_affinity("LIG")
-        
+
         # Verify the affinity was added correctly
         assert len(job.properties) == 1
         assert isinstance(job.properties[0], Affinity)
@@ -175,7 +191,7 @@ class TestAffinityValidation:
         job = Job("multi_id_test")
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG", "ETHANOL"])
-        
+
         # Should work with either ID
         job.request_affinity("ETHANOL")
         assert len(job.properties) == 1
@@ -191,7 +207,7 @@ class TestAffinityValidation:
     def test_request_affinity_empty_job(self):
         """Test affinity request on empty job raises appropriate error."""
         job = Job("empty_test")
-        
+
         with pytest.raises(ValueError, match="No ligand with id 'LIG' found"):
             job.request_affinity("LIG")
 
@@ -206,9 +222,9 @@ class TestAffinityIntegration:
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
         job.request_affinity("LIG")
-        
+
         yaml_dict = job.to_dict()
-        
+
         assert "properties" in yaml_dict
         assert len(yaml_dict["properties"]) == 1
         assert "affinity" in yaml_dict["properties"][0]
@@ -220,14 +236,14 @@ class TestAffinityIntegration:
         job = Job("constraints_test")
         job.add_protein_chain("MVTPKVLHC", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
-        
+
         # Add constraints
         job.add_pocket("LIG")
         job.add_contact("A", 1, "LIG", 1)
-        
+
         # Request affinity
         job.request_affinity("LIG")
-        
+
         # Verify all components are present
         assert len(job.constraints) == 2
         assert len(job.properties) == 1
@@ -239,13 +255,13 @@ class TestAffinityIntegration:
         job = Job("templates_test")
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
-        
+
         # Add template
         job.add_template(cif="test.cif", chain_id=["A"])
-        
+
         # Request affinity
         job.request_affinity("LIG")
-        
+
         # Verify all components are present
         assert len(job.templates) == 1
         assert len(job.properties) == 1
@@ -258,9 +274,9 @@ class TestAffinityIntegration:
         job.add_protein_chain("MVTP", ids=["A"])
         job.add_ligand(smiles="CCO", ids=["LIG"])
         job.request_affinity("LIG")
-        
+
         job_str = str(job)
-        
+
         assert "Properties:" in job_str
         assert "Affinity for ligand: LIG" in job_str
 
@@ -272,26 +288,26 @@ class TestAffinityIntegration:
         job.add_protein_chain("MVTPKVLH", ids=["PROT"])
         job.add_dna_chain("ATCGATCG", ids=["DNA"])
         job.add_ligand(smiles="c1ccccc1", ids=["BENZENE"])
-        
+
         # Add various components
         job.add_pocket("BENZENE")
         job.add_template(cif="template.cif", chain_id=["PROT"])
-        
+
         # Request affinity with expected warning
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             job.request_affinity("BENZENE")
-            
+
             # Should warn about DNA target
             assert len(w) == 1
             assert "DnaChain" in str(w[0].message)
-        
+
         # Verify complete job structure
         assert len(job.sequences) == 3
         assert len(job.constraints) == 1
         assert len(job.templates) == 1
         assert len(job.properties) == 1
-        
+
         # Verify YAML generation works
         yaml_str = job.to_yaml()
         assert "affinity" in yaml_str

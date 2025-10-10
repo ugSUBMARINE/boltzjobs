@@ -267,7 +267,7 @@ class Job:
         threshold: float | None = None,
     ) -> Template:
         """Add a template structure from a CIF or PDB file.
-        
+
         Args:
             cif: Path to mmCIF template file (mutually exclusive with pdb)
             pdb: Path to PDB template file (mutually exclusive with cif)
@@ -275,10 +275,10 @@ class Job:
             template_id: Template chain ID(s) from the template file
             force: Whether to use potential to enforce template structure
             threshold: Distance threshold in Angstroms when force=True
-            
+
         Returns:
             The created Template instance
-            
+
         Raises:
             ValueError: If neither cif nor pdb is provided, or if both are provided,
                        or if force=True but threshold is None
@@ -291,14 +291,16 @@ class Job:
         elif cif is None and pdb is None:
             raise ValueError("Either 'cif' or 'pdb' file path must be provided")
         else:
-            raise ValueError("'cif' and 'pdb' are mutually exclusive - provide only one")
-            
+            raise ValueError(
+                "'cif' and 'pdb' are mutually exclusive - provide only one"
+            )
+
         # Normalize chain_id and template_id to lists
         if chain_id is None:
             chain_id = []
         elif isinstance(chain_id, str):
             chain_id = [chain_id]
-            
+
         if template_id is None:
             template_id = []
         elif isinstance(template_id, str):
@@ -310,11 +312,11 @@ class Job:
             chain_id=chain_id,
             template_id=template_id,
             force=force,
-            threshold=threshold
+            threshold=threshold,
         )
         self.templates.append(template)
         return template
-    
+
     def add_pdb_template(
         self,
         pdb: str,
@@ -324,16 +326,16 @@ class Job:
         threshold: float | None = None,
     ) -> Template:
         """Add a PDB template structure.
-        
+
         Convenience method for adding PDB templates without specifying cif=None.
-        
+
         Args:
             pdb: Path to PDB template file
             chain_id: Chain ID(s) in the job to apply this template to
             template_id: Template chain ID(s) from the PDB file
             force: Whether to use potential to enforce template structure
             threshold: Distance threshold in Angstroms when force=True
-            
+
         Returns:
             The created Template instance
         """
@@ -342,9 +344,9 @@ class Job:
             chain_id=chain_id,
             template_id=template_id,
             force=force,
-            threshold=threshold
+            threshold=threshold,
         )
-    
+
     def add_cif_template(
         self,
         cif: str,
@@ -354,16 +356,16 @@ class Job:
         threshold: float | None = None,
     ) -> Template:
         """Add a CIF template structure.
-        
+
         Convenience method for adding CIF templates without specifying pdb=None.
-        
+
         Args:
             cif: Path to mmCIF template file
             chain_id: Chain ID(s) in the job to apply this template to
             template_id: Template chain ID(s) from the CIF file
             force: Whether to use potential to enforce template structure
             threshold: Distance threshold in Angstroms when force=True
-            
+
         Returns:
             The created Template instance
         """
@@ -372,56 +374,64 @@ class Job:
             chain_id=chain_id,
             template_id=template_id,
             force=force,
-            threshold=threshold
+            threshold=threshold,
         )
 
     def request_affinity(self, binder: str) -> None:
         """Request an affinity estimation for a ligand with the given binder ID.
-        
+
         Args:
             binder: Chain ID of the ligand to compute affinity for
-            
+
         Raises:
             ValueError: If binder is not a ligand, if affinity already requested,
                        or if no ligand with the specified ID is found
-                       
+
         Warnings:
             Issues warnings if non-protein targets are present, as this may
             produce unreliable affinity results according to Boltz-2 schema
         """
         # Check if affinity computation has already been requested
-        existing_affinities = [prop for prop in self.properties if isinstance(prop, Affinity)]
+        existing_affinities = [
+            prop for prop in self.properties if isinstance(prop, Affinity)
+        ]
         if existing_affinities:
             raise ValueError(
                 f"Only one affinity computation allowed per job. "
                 f"Affinity already requested for: {existing_affinities[0].binder}"
             )
-        
+
         # Find the ligand with the specified binder ID
         binder_ligand = None
         for seq in self.sequences:
             if binder in seq.ids and isinstance(seq, Ligand):
                 binder_ligand = seq
                 break
-        
+
         if binder_ligand is None:
             raise ValueError(
                 f"Affinity can only be estimated for ligands. No ligand with id '{binder}' found."
             )
-        
+
         # Check for protein targets and issue warnings for non-protein targets
-        non_ligand_sequences = [seq for seq in self.sequences if not isinstance(seq, Ligand)]
-        protein_targets = [seq for seq in non_ligand_sequences if isinstance(seq, ProteinChain)]
-        non_protein_targets = [seq for seq in non_ligand_sequences if not isinstance(seq, ProteinChain)]
-        
+        non_ligand_sequences = [
+            seq for seq in self.sequences if not isinstance(seq, Ligand)
+        ]
+        protein_targets = [
+            seq for seq in non_ligand_sequences if isinstance(seq, ProteinChain)
+        ]
+        non_protein_targets = [
+            seq for seq in non_ligand_sequences if not isinstance(seq, ProteinChain)
+        ]
+
         if not protein_targets:
             warnings.warn(
                 "No protein chains found in job. Affinity computation without protein "
                 "targets may produce unreliable results.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
-        
+
         if non_protein_targets:
             target_types = [type(seq).__name__ for seq in non_protein_targets]
             warnings.warn(
@@ -429,9 +439,9 @@ class Job:
                 "Affinity computation with DNA/RNA targets may produce unreliable results "
                 "according to Boltz-2 schema.",
                 UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
-        
+
         # Add the affinity property
         self.properties.append(Affinity(binder))
 

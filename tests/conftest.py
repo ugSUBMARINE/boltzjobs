@@ -6,8 +6,15 @@ from pathlib import Path
 
 from boltzjobs import Job
 from boltzjobs.components import (
-    ProteinChain, DnaChain, RnaChain, Ligand,
-    Bond, Contact, Pocket, Template, Affinity
+    ProteinChain,
+    DnaChain,
+    RnaChain,
+    Ligand,
+    Bond,
+    Contact,
+    Pocket,
+    Template,
+    Affinity,
 )
 
 
@@ -49,7 +56,7 @@ def protein_chain(sample_protein_sequence):
 
 @pytest.fixture
 def dna_chain(sample_dna_sequence):
-    """Create a sample DNA chain.""" 
+    """Create a sample DNA chain."""
     return DnaChain(["B"], sample_dna_sequence)
 
 
@@ -110,7 +117,9 @@ def basic_job(protein_chain, ligand_smiles):
 
 
 @pytest.fixture
-def complex_job(protein_chain, dna_chain, ligand_smiles, bond, contact, pocket, template, affinity):
+def complex_job(
+    protein_chain, dna_chain, ligand_smiles, bond, contact, pocket, template, affinity
+):
     """Create a complex job with all component types."""
     job = Job("complex_test_job", version=1)
     job.sequences = [protein_chain, dna_chain, ligand_smiles]
@@ -123,7 +132,7 @@ def complex_job(protein_chain, dna_chain, ligand_smiles, bond, contact, pocket, 
 @pytest.fixture
 def temp_yaml_file():
     """Create a temporary YAML file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yield f.name
     Path(f.name).unlink(missing_ok=True)
 

@@ -40,7 +40,7 @@ class TestTemplateEnhancements:
             chain_id=["A", "B"],
             template_id=["X", "Y"],
             force=True,
-            threshold=2.5
+            threshold=2.5,
         )
         assert template.pdb == "template.pdb"
         assert template.cif is None
@@ -52,7 +52,9 @@ class TestTemplateEnhancements:
     @pytest.mark.unit
     def test_template_no_file_error(self):
         """Test Template creation fails when no file is provided."""
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             Template()
 
     @pytest.mark.unit
@@ -64,7 +66,9 @@ class TestTemplateEnhancements:
     @pytest.mark.unit
     def test_template_force_without_threshold_error(self):
         """Test Template creation fails when force=True but no threshold."""
-        with pytest.raises(ValueError, match="'threshold' must be specified when 'force=True'"):
+        with pytest.raises(
+            ValueError, match="'threshold' must be specified when 'force=True'"
+        ):
             Template(cif="test.cif", force=True)
 
     @pytest.mark.unit
@@ -128,7 +132,7 @@ class TestTemplateStringRepresentation:
             chain_id=["A"],
             template_id=["X"],
             force=True,
-            threshold=3.0
+            threshold=3.0,
         )
         str_repr = str(template)
         assert "++ Template: PDB: 'template.pdb'" in str_repr
@@ -219,16 +223,16 @@ class TestTemplateSerialization:
             chain_id=["A", "B"],
             template_id=["X", "Y"],
             force=True,
-            threshold=2.0
+            threshold=2.0,
         )
         result = template.to_dict()
-        
+
         expected = {
             "pdb": "template.pdb",
             "chain_id": FlowStyleList(["A", "B"]),
             "template_id": FlowStyleList(["X", "Y"]),
             "force": True,
-            "threshold": 2.0
+            "threshold": 2.0,
         }
         assert result == expected
 
@@ -310,7 +314,7 @@ class TestTemplateDeserialization:
             "chain_id": ["A", "B"],
             "template_id": ["X", "Y"],
             "force": True,
-            "threshold": 2.0
+            "threshold": 2.0,
         }
         template = Template.from_dict(data)
         assert template.pdb == "template.pdb"
@@ -354,11 +358,11 @@ class TestTemplateRoundTripSerialization:
             chain_id=["A", "B"],
             template_id=["X", "Y"],
             force=True,
-            threshold=2.5
+            threshold=2.5,
         )
         data = original.to_dict()
         restored = Template.from_dict(data)
-        
+
         assert restored.pdb == original.pdb
         assert restored.cif == original.cif
         assert restored.chain_id == original.chain_id
@@ -387,7 +391,7 @@ class TestTemplateBackwardCompatibility:
         """Test Template serialization is backward compatible."""
         template = Template(cif="legacy.cif", chain_id=["A"])
         result = template.to_dict()
-        
+
         # Should look like old format but with new structure
         expected = {"cif": "legacy.cif", "chain_id": "A"}
         assert result == expected
@@ -398,7 +402,7 @@ class TestTemplateBackwardCompatibility:
         # Old format data
         data = {"cif": "legacy.cif", "chain_id": "A", "template_id": ["X", "Y"]}
         template = Template.from_dict(data)
-        
+
         assert template.cif == "legacy.cif"
         assert template.pdb is None
         assert template.chain_id == ["A"]
@@ -413,26 +417,34 @@ class TestTemplateEdgeCases:
     @pytest.mark.unit
     def test_template_empty_string_cif(self):
         """Test Template with empty string CIF is invalid."""
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             Template(cif="")
 
     @pytest.mark.unit
     def test_template_empty_string_pdb(self):
         """Test Template with empty string PDB is invalid."""
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             Template(pdb="")
 
     @pytest.mark.unit
     def test_template_none_values_both(self):
         """Test Template with explicit None values for both files."""
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             Template(cif=None, pdb=None)
 
     @pytest.mark.unit
     def test_template_empty_strings_both(self):
         """Test Template with empty strings for both files."""
         # Empty strings are treated as falsy, so this is equivalent to no files provided
-        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
+        with pytest.raises(
+            ValueError, match="Either 'cif' or 'pdb' file path must be provided"
+        ):
             Template(cif="", pdb="")
 
     @pytest.mark.unit
