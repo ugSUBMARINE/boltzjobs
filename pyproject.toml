@@ -7,7 +7,10 @@ license = {text = "MIT"}
 authors = [
     {name = "Karl Gruber", email = "karl.gruber@uni-graz.at"},
 ]
-keywords = ["Boltz-2", "molecular biology", "protein modeling", "bioinformatics"]
+maintainers = [
+    {name = "Karl Gruber", email = "karl.gruber@uni-graz.at"},
+]
+keywords = ["Boltz-2", "molecular biology", "protein modeling", "bioinformatics", "structural biology", "YAML"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -21,15 +24,49 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ugSUBMARINE/boltzjobs"
+Documentation = "https://github.com/ugSUBMARINE/boltzjobs#readme"
+Repository = "https://github.com/ugSUBMARINE/boltzjobs.git"
+"Bug Tracker" = "https://github.com/ugSUBMARINE/boltzjobs/issues"
+Changelog = "https://github.com/ugSUBMARINE/boltzjobs/releases"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+# Only include specific files in source distribution
+include = [
+    "/src",
+    "/examples",
+    "/README.md",
+    "/LICENSE.txt", 
+    "/pyproject.toml",
+]
+exclude = [
+    "/tests",
+    "/todos",
+    "/.python-version",
+    "/uv.lock",
+    "/WARP.md",
+]
+
+[tool.hatch.build.targets.wheel]
+# Ensure proper package structure in wheel
+packages = ["src/boltzjobs"]
+exclude = [
+    "/examples",
+    "/tests",
+    "/todos",
+]
 
 [dependency-groups]
 dev = [
     "mypy>=1.18.2",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
+    "twine>=6.2.0",
     "types-pyyaml>=6.0.12.20250915",
 ]
 
