@@ -259,23 +259,121 @@ class Job:
 
     def add_template(
         self,
-        cif: str,
+        cif: str | None = None,
+        pdb: str | None = None,
         chain_id: str | list[str] | None = None,
         template_id: str | list[str] | None = None,
-    ) -> None:
-        """Add a template structure."""
-        if not cif:
-            raise ValueError("CIF file must be provided.")
+        force: bool = False,
+        threshold: float | None = None,
+    ) -> Template:
+        """Add a template structure from a CIF or PDB file.
+        
+        Args:
+            cif: Path to mmCIF template file (mutually exclusive with pdb)
+            pdb: Path to PDB template file (mutually exclusive with cif)
+            chain_id: Chain ID(s) in the job to apply this template to
+            template_id: Template chain ID(s) from the template file
+            force: Whether to use potential to enforce template structure
+            threshold: Distance threshold in Angstroms when force=True
+            
+        Returns:
+            The created Template instance
+            
+        Raises:
+            ValueError: If neither cif nor pdb is provided, or if both are provided,
+                       or if force=True but threshold is None
+        """
+        # Backward compatibility: if first argument is a string, treat as cif
+        if isinstance(cif, str) and pdb is None:
+            pass  # Normal case
+        elif cif is None and isinstance(pdb, str):
+            pass  # PDB case
+        elif cif is None and pdb is None:
+            raise ValueError("Either 'cif' or 'pdb' file path must be provided")
+        else:
+            raise ValueError("'cif' and 'pdb' are mutually exclusive - provide only one")
+            
+        # Normalize chain_id and template_id to lists
         if chain_id is None:
             chain_id = []
         elif isinstance(chain_id, str):
             chain_id = [chain_id]
+            
         if template_id is None:
             template_id = []
         elif isinstance(template_id, str):
             template_id = [template_id]
 
-        self.templates.append(Template(cif, chain_id=chain_id, template_id=template_id))
+        template = Template(
+            cif=cif,
+            pdb=pdb,
+            chain_id=chain_id,
+            template_id=template_id,
+            force=force,
+            threshold=threshold
+        )
+        self.templates.append(template)
+        return template
+    
+    def add_pdb_template(
+        self,
+        pdb: str,
+        chain_id: str | list[str] | None = None,
+        template_id: str | list[str] | None = None,
+        force: bool = False,
+        threshold: float | None = None,
+    ) -> Template:
+        """Add a PDB template structure.
+        
+        Convenience method for adding PDB templates without specifying cif=None.
+        
+        Args:
+            pdb: Path to PDB template file
+            chain_id: Chain ID(s) in the job to apply this template to
+            template_id: Template chain ID(s) from the PDB file
+            force: Whether to use potential to enforce template structure
+            threshold: Distance threshold in Angstroms when force=True
+            
+        Returns:
+            The created Template instance
+        """
+        return self.add_template(
+            pdb=pdb,
+            chain_id=chain_id,
+            template_id=template_id,
+            force=force,
+            threshold=threshold
+        )
+    
+    def add_cif_template(
+        self,
+        cif: str,
+        chain_id: str | list[str] | None = None,
+        template_id: str | list[str] | None = None,
+        force: bool = False,
+        threshold: float | None = None,
+    ) -> Template:
+        """Add a CIF template structure.
+        
+        Convenience method for adding CIF templates without specifying pdb=None.
+        
+        Args:
+            cif: Path to mmCIF template file
+            chain_id: Chain ID(s) in the job to apply this template to
+            template_id: Template chain ID(s) from the CIF file
+            force: Whether to use potential to enforce template structure
+            threshold: Distance threshold in Angstroms when force=True
+            
+        Returns:
+            The created Template instance
+        """
+        return self.add_template(
+            cif=cif,
+            chain_id=chain_id,
+            template_id=template_id,
+            force=force,
+            threshold=threshold
+        )
 
     def request_affinity(self, binder: str) -> None:
         """Request an affinity estimation for a ligand with the given binder ID."""
@@ -312,12 +410,16 @@ class Job:
 
         return d
 
+    def to_yaml(self) -> str:
+        """Convert the job to a YAML string."""
+        return yaml.dump(
+            self.to_dict(), Dumper=IndentedDumper, indent=2, sort_keys=False
+        )
+
     def write_yaml(self, filename: str) -> None:
         """Write the job to a YAML file as input for Boltz-2."""
         with open(filename, "w") as f:
-            yaml.dump(
-                self.to_dict(), f, Dumper=IndentedDumper, indent=2, sort_keys=False
-            )
+            f.write(self.to_yaml())
 
     @classmethod
     def from_yaml(cls, filename: str, jobname: str = "boltz_job") -> Self:

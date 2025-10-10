@@ -412,7 +412,7 @@ class TestJobAddTemplate:
     def test_add_template_empty_cif(self):
         """Test template addition with empty CIF raises error."""
         job = Job()
-        with pytest.raises(ValueError, match="CIF file must be provided"):
+        with pytest.raises(ValueError, match="Either 'cif' or 'pdb' file path must be provided"):
             job.add_template("")
 
 

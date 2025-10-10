@@ -180,28 +180,67 @@ class SequenceModification:
 
 @dataclass
 class Template:
-    """Represents a template for a protein chain."""
+    """Represents a template structure for structure prediction.
+    
+    Templates can be provided as either mmCIF (.cif) or PDB (.pdb) files.
+    The cif and pdb fields are mutually exclusive - exactly one must be provided.
+    
+    When force=True, the template structure is enforced during prediction
+    using a potential function with the specified threshold distance.
+    """
 
-    cif: str  # mmCIF template string
+    cif: str | None = None  # mmCIF template file path
+    pdb: str | None = None  # PDB template file path
     chain_id: list[str] = field(default_factory=list)
     template_id: list[str] = field(default_factory=list)
+    force: bool = False  # Use potential to enforce template
+    threshold: float | None = None  # Distance threshold in Angstroms when force=True
+
+    def __post_init__(self) -> None:
+        """Validate Template parameters."""
+        # Check if both files are provided (mutually exclusive)
+        if self.cif and self.pdb:
+            raise ValueError("'cif' and 'pdb' are mutually exclusive - provide only one")
+        
+        # Exactly one of cif or pdb must be provided (and not empty)
+        if not self.cif and not self.pdb:
+            raise ValueError("Either 'cif' or 'pdb' file path must be provided")
+        
+        # If force is True, threshold must be specified
+        if self.force and self.threshold is None:
+            raise ValueError("'threshold' must be specified when 'force=True'")
 
     @override
     def __str__(self) -> str:
-        lines = [
-            f"    {self.cif!r}",
-        ]
+        # Determine file type and path
+        if self.cif:
+            file_info = f"CIF: {self.cif!r}"
+        elif self.pdb:
+            file_info = f"PDB: {self.pdb!r}"
+        else:
+            file_info = "<no file specified>"
+            
+        lines = [f"++ Template: {file_info}"]
+        
         if self.template_id:
-            lines.append(f"template id(s): {', '.join(self.template_id)}")
+            lines.append(f"   Template ID(s): {', '.join(self.template_id)}")
         if self.chain_id:
-            lines.append(f"to be used for chain id(s): {', '.join(self.chain_id)}")
-        return ", ".join(lines)
+            lines.append(f"   For chain ID(s): {', '.join(self.chain_id)}")
+        if self.force:
+            lines.append(f"   Force: True (threshold: {self.threshold}Å)")
+            
+        return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the template to a dictionary."""
-        d: dict[str, Any] = {
-            "cif": self.cif,
-        }
+        d: dict[str, Any] = {}
+        
+        # Add the file path (either cif or pdb)
+        if self.cif:
+            d["cif"] = self.cif
+        elif self.pdb:
+            d["pdb"] = self.pdb
+            
         if self.chain_id:
             d["chain_id"] = (
                 FlowStyleList(self.chain_id)
@@ -215,23 +254,44 @@ class Template:
                 if len(self.template_id) > 1
                 else self.template_id[0]
             )
+            
+        # Add force and threshold if applicable
+        if self.force:
+            d["force"] = self.force
+        if self.threshold is not None:
+            d["threshold"] = self.threshold
 
         return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create a Template instance from a dictionary."""
         cif = data.get("cif")
+        pdb = data.get("pdb")
+        
         if chain_id := data.get("chain_id"):
             if isinstance(chain_id, str):
                 chain_id = [chain_id]
         else:
             chain_id = []
+            
         if template_id := data.get("template_id"):
             if isinstance(template_id, str):
                 template_id = [template_id]
         else:
             template_id = []
-        return cls(cif, chain_id, template_id)  # type: ignore
+            
+        force = data.get("force", False)
+        threshold = data.get("threshold")
+        
+        return cls(
+            cif=cif,
+            pdb=pdb,
+            chain_id=chain_id,
+            template_id=template_id,
+            force=force,
+            threshold=threshold
+        )
 
 
 @dataclass
