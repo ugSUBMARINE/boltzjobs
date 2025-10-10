@@ -15,6 +15,9 @@ It provides an intuitive, object-oriented interface for defining molecular seque
 ## Installation
 
 ```bash
+pip install boltzjobs
+
+# Or install the latest development version directly from GitHub
 pip install git+https://github.com/ugSUBMARINE/boltzjobs.git
 ```
 
