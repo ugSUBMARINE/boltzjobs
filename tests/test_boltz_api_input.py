@@ -261,7 +261,8 @@ def test_boltz_api_ligand_binding_rejects_nucleic_acids() -> None:
     job.add_protein_chain("MVTPEGNVSLVDESLLVGVTDED", ids="A")
     job.add_dna_chain("ATCG", ids="D")
     job.add_ligand(smiles="CCO", ids="L")
-    job.request_affinity("L")
+    with pytest.warns(UserWarning, match="Non-protein targets detected"):
+        job.request_affinity("L")
 
     with pytest.raises(ValueError, match="only supports complexes containing proteins and ligands"):
         job.to_boltz_api_input()
