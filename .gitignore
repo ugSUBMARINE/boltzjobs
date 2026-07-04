@@ -24,3 +24,5 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+
+AGENTS.md
