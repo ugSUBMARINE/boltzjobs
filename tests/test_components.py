@@ -1,7 +1,6 @@
 """Tests for boltzjobs.components module."""
 
 import pytest
-from dataclasses import FrozenInstanceError
 
 from boltzjobs.components import (
     ProteinChain,

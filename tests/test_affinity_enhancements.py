@@ -1,7 +1,8 @@
 """Tests for Enhanced Affinity Computation (Section 4 of TODO.md)."""
 
-import pytest
 import warnings
+
+import pytest
 
 from boltzjobs import Job
 from boltzjobs.components import Affinity
@@ -119,7 +120,7 @@ class TestAffinityValidation:
             assert len(w) == 1
             assert "No protein chains found" in str(w[0].message)
             assert "may produce unreliable results" in str(w[0].message)
-            assert w[0].category == UserWarning
+            assert w[0].category is UserWarning
 
     @pytest.mark.unit
     def test_request_affinity_dna_rna_targets_warning(self, dna_rna_ligand_job):
@@ -167,7 +168,7 @@ class TestAffinityValidation:
             warning = w[0]
             assert "Non-protein targets detected" in str(warning.message)
             assert "DnaChain, RnaChain" in str(warning.message)
-            assert w[0].category == UserWarning
+            assert w[0].category is UserWarning
 
     @pytest.mark.unit
     def test_request_affinity_preserves_existing_properties(self):

@@ -5,7 +5,6 @@ import yaml
 
 from boltzjobs import Job
 from boltzjobs.components import Template
-from boltzjobs.utils import IndentedDumper
 
 
 class TestJobAddTemplate:

@@ -162,7 +162,6 @@ class TestRepresenters:
     @pytest.mark.unit
     def test_flow_style_list_representer(self):
         """Test flow_style_list_representer function."""
-        from io import StringIO
 
         dumper = IndentedDumper(StringIO())
         fsl = FlowStyleList([1, 2, 3])
@@ -175,7 +174,6 @@ class TestRepresenters:
     @pytest.mark.unit
     def test_single_quoted_representer(self):
         """Test single_quoted_representer function."""
-        from io import StringIO
 
         dumper = IndentedDumper(StringIO())
         sq = SingleQuoted("test")

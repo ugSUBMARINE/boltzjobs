@@ -207,7 +207,7 @@ class TestJobAddDnaChain:
     def test_add_dna_chain_basic(self, sample_dna_sequence):
         """Test basic DNA chain addition."""
         job = Job()
-        chain = job.add_dna_chain(sample_dna_sequence)
+        job.add_dna_chain(sample_dna_sequence)
 
         assert len(job.sequences) == 1
         assert isinstance(job.sequences[0], DnaChain)
@@ -230,7 +230,7 @@ class TestJobAddRnaChain:
     def test_add_rna_chain_basic(self, sample_rna_sequence):
         """Test basic RNA chain addition."""
         job = Job()
-        chain = job.add_rna_chain(sample_rna_sequence)
+        job.add_rna_chain(sample_rna_sequence)
 
         assert len(job.sequences) == 1
         assert isinstance(job.sequences[0], RnaChain)
@@ -253,7 +253,7 @@ class TestJobAddLigand:
     def test_add_ligand_smiles(self, sample_smiles):
         """Test ligand addition with SMILES."""
         job = Job()
-        ligand = job.add_ligand(smiles=sample_smiles)
+        job.add_ligand(smiles=sample_smiles)
 
         assert len(job.sequences) == 1
         assert isinstance(job.sequences[0], Ligand)
@@ -264,7 +264,7 @@ class TestJobAddLigand:
     def test_add_ligand_ccd(self, sample_ccd):
         """Test ligand addition with CCD."""
         job = Job()
-        ligand = job.add_ligand(ccd=sample_ccd)
+        job.add_ligand(ccd=sample_ccd)
 
         assert job.sequences[0].ccd == sample_ccd
 

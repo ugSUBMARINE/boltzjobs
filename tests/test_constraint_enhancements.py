@@ -421,7 +421,7 @@ class TestConstraintYamlSerialization:
         """Test pocket with force parameter survives YAML round-trip."""
         job = Job("test")
         job.add_ligand(ccd="ATP", ids="A")
-        pocket = job.add_pocket("A", max_distance=8.0, force=True)
+        job.add_pocket("A", max_distance=8.0, force=True)
 
         # Convert to dict and back
         job_dict = job.to_dict()
@@ -437,7 +437,7 @@ class TestConstraintYamlSerialization:
         job = Job("test")
         job.add_protein_chain("MKLLVV", ids="A")
         job.add_ligand(ccd="ATP", ids="B")
-        contact = job.add_contact("A", 1, "B", 2, max_distance=10.0, force=True)
+        job.add_contact("A", 1, "B", 2, max_distance=10.0, force=True)
 
         # Convert to dict and back
         job_dict = job.to_dict()
@@ -452,7 +452,7 @@ class TestConstraintYamlSerialization:
         """Test pocket without force doesn't include force in YAML."""
         job = Job("test")
         job.add_ligand(ccd="ATP", ids="A")
-        pocket = job.add_pocket("A", max_distance=8.0, force=False)
+        job.add_pocket("A", max_distance=8.0, force=False)
 
         # Convert to dict
         job_dict = job.to_dict()
@@ -478,10 +478,10 @@ class TestIntegrationConstraintEnhancements:
         job.add_ligand(ccd="ATP", ids="L1")
 
         # Add pocket constraints for each type
-        pocket_p = job.add_pocket("P1", max_distance=8.0, force=True)
-        pocket_d = job.add_pocket("D1", max_distance=10.0)
-        pocket_r = job.add_pocket("R1", max_distance=7.0, force=True)
-        pocket_l = job.add_pocket("L1", max_distance=6.0)
+        job.add_pocket("P1", max_distance=8.0, force=True)
+        job.add_pocket("D1", max_distance=10.0)
+        job.add_pocket("R1", max_distance=7.0, force=True)
+        job.add_pocket("L1", max_distance=6.0)
 
         # Verify all pockets were added
         assert len(job.constraints) == 4

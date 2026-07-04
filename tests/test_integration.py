@@ -17,12 +17,12 @@ class TestCompleteWorkflows:
         job = Job("protein_ligand_complex")
 
         # Add protein
-        protein = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MVTPEGNVSLVDESLLVGVTDED", ids="A", msa="empty"
         )
 
         # Add ligand
-        ligand = job.add_ligand(smiles="CC(=O)N[C@@H](C)C(=O)O", ids="L")
+        job.add_ligand(smiles="CC(=O)N[C@@H](C)C(=O)O", ids="L")
 
         # Add constraints
         pocket = job.add_pocket("L", max_distance=6.0)
@@ -67,13 +67,13 @@ class TestCompleteWorkflows:
         job = Job("multimer_complex")
 
         # Add multiple protein chains
-        protein_a = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MVTPEGNVSLVDESLLVGVTDED",
             count=2,  # Two copies
             ids=["A", "B"],
         )
 
-        protein_b = job.add_protein_chain(sequence="EAFSLFDKSLVNETP", ids="C")
+        job.add_protein_chain(sequence="EAFSLFDKSLVNETP", ids="C")
 
         # Add inter-chain bonds
         job.add_contact("A", 5, "B", 10, max_distance=6.0)
@@ -109,11 +109,11 @@ class TestCompleteWorkflows:
         job = Job("nucleic_acid_complex")
 
         # Add DNA and RNA
-        dna_chain = job.add_dna_chain("ATCGATCGATCG", ids="D")
-        rna_chain = job.add_rna_chain("AUCGAUCGAUCG", ids="R")
+        job.add_dna_chain("ATCGATCGATCG", ids="D")
+        job.add_rna_chain("AUCGAUCGAUCG", ids="R")
 
         # Add protein that binds to nucleic acids
-        protein = job.add_protein_chain(sequence="MVTPEGNVSLVDESLLVGVTDED", ids="P")
+        job.add_protein_chain(sequence="MVTPEGNVSLVDESLLVGVTDED", ids="P")
 
         # Add nucleic acid-protein contacts
         job.add_contact("D", 5, "P", 10, max_distance=6.0)
@@ -360,18 +360,18 @@ class TestRealWorldScenarios:
         job = Job("antibody_antigen")
 
         # Add antibody chains
-        heavy_chain = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="EVQLVESGGGLVQPGGSLRLSCAASGFNIKDTYIHWVRQAPGKGLEWVARIYPTNGYTRYADSVKGRFTISADTSKNTAYLQMNSLRAEDTAVYYCSRWGGDGFYAMDYWGQGTLVTVSS",
             ids="H",
         )
 
-        light_chain = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="DIQMTQSPSSLSASVGDRVTITCRASQSISSWLAWYQQKPGKAPKLLIYKASSLESGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCQQYNSYNPLTFGGGTKVEIK",
             ids="L",
         )
 
         # Add antigen
-        antigen = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MELAALCRWGLLLALLPPGAASTQVCTGTDMKLRLPASPETHLDMLRHLYQGCQVVQGNLELTYLPTNASLSFLQDIQEVQGYVLIAHNQVRQVPLQRLRIVRGTQLFEDNYALAVLDNGDPLNNTTPVTGASPGGLRELQLRSLTEILKGGVLIQRNPQLCYQDTILWKDIFHKNNQLALTLIDTNRSR",
             ids="A",
         )
@@ -407,7 +407,7 @@ class TestRealWorldScenarios:
         job = Job("drug_discovery")
 
         # Add target protein (e.g., kinase)
-        target = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MENFQKVEKIGEGTYGVVYKARNKLTGEVVALKKIRLDTETEGVPSTAIREISLLKELNHPNIVKLLDVIHTENKLYLVFEFLHQDLKKFMDASALTGIPLPLIKSYLFQLLQGLAFCHSHRVLHRDLKPQNLLINTEGAIKLADFGLARAFGVPVRTYTHEVVTLWYRAPEILLGCKYYSTAVDIWSLGCIFAEMVTRRALFPGDSEIDQLFRIFRTLGTPDEVVWPGVTSMPDYKPSFPKWARQDFSKVVPPLDEDGRSLLSQMLHYDPNKRISAKAALAHPFFQDVTKPVPHLRL",
             ids="TARGET",
             msa="kinase_msa.a3m",
@@ -453,23 +453,23 @@ class TestRealWorldScenarios:
         job = Job("membrane_protein")
 
         # Add membrane protein (GPCR-like)
-        receptor = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MGSSTSAPPNISCSSCLPLERPSTSQHPRNSSCDAISYDRYASIFLCIVFGNIMVIILIVLRLRRRKKLNGEKTRPRRNLPQMPTGITAQEDLLASDDAYNPQEFCEFMYKTKKRTEKDVVQSLVAMLCNIIASDSLNPVYFMGSLNQTAEFMRRMLLQTLTWKMAVLLGLIASILFLALVTEDQQQQLQIQHQTNQPLLQQNPSSRCVSIIDPPCRLSSLHSLSLRRSLRQPPQRFLLHRCQRRLQTSLGLSSLLEMLR",
             ids="GPCR",
         )
 
         # Add G-protein subunits
-        g_alpha = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MGCTQSAEDSKCQKYTRQVDQMEYLCSQQTIDQVHRNLNNVGQDSYKQCLHQLDQGEKQILFYCFKNLLKRRCRKGMEGLTNQDSMEGLRLMNQNKIAAAQHNNQPMNQSCSQHDRYNLCDLLLRRIEMCDKDSMNQLYQNLLQRETKSLKVQYTLTLEDLRWSQRSLTSLQLLNNKTNKQHISVEQLQRRRQQLRQQHQHQQRQRQRQQQPPRLNQN",
             ids="GA",
         )
 
-        g_beta = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MGQGSLKQVFQKYKWLNVPMEYSLNSLMDSYQTQDQRLISHMQRQMKQSTLYTKKLSSSCTDKFKQVAQEQLEQCLQAHLLRKFNLFQKDSSLLLQRPSQVQPKYLYVSGEFLAKGSQSGLQNSYILQLRKSGVYLPKSKRTLDYQQQRQQQYTLDSMQQMTLREEWKQKTKAMIREWQRQRDTHRTKQLLQHQRQRQQQRRRNQRKQQLMQSKLVEQRSHRVIQKLITLTQPQRQHKRQLRKRSRLTSQHRQRRERLRSQQQQSKAQTSLHLLTQRQERQHSRRLRNQQRQRR",
             ids="GB",
         )
 
-        g_gamma = job.add_protein_chain(
+        job.add_protein_chain(
             sequence="MSRLDQCCDCCQARNSQKQAFCCQHLERECEKRKKRLEKQNSLLLLLLLLECVGQNCCKSCPCCLTSLEKQCLQCCLGSCECKCKCLKQCCQSRLKQCCQKC",
             ids="GG",
         )

@@ -1,7 +1,6 @@
 """Tests for Template class enhancements (Section 2 of TODO.md)."""
 
 import pytest
-from dataclasses import FrozenInstanceError
 
 from boltzjobs.components import Template
 from boltzjobs.utils import FlowStyleList
