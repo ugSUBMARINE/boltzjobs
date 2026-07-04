@@ -11,6 +11,7 @@ It provides an intuitive, object-oriented interface for defining molecular seque
 - Specify geometric **constraints**, including bonds, contacts, and binding pockets.
 - Define mmCIF or PDB files as **structural templates**.
 - Request property calculations, such as **binding affinity**.
+- Export Boltz Lab API inputs for structure and binding predictions.
 
 ## Installation
 
@@ -89,6 +90,32 @@ properties:
   - affinity:
       binder: L
 ```
+
+## Boltz Lab API Input
+
+You can also export the raw `input` object for the Boltz Lab API `Predict structure and binding` endpoint. The package does not depend on `boltz-api`; it only prepares the dictionary to pass to the client.
+
+```python
+import os
+
+from boltz_api import Boltz
+from boltzjobs import Job
+
+job = Job("aspirin_target")
+job.add_protein_chain("MKTIIALSYIFCLVFA", ids="A")
+job.add_ligand(smiles="CC(=O)OC1=CC=CC=C1C(=O)O", ids="B")
+job.request_affinity("B")
+
+prediction_input = job.to_boltz_api_input(num_samples=3)
+
+client = Boltz(api_key=os.environ["BOLTZ_API_KEY"])
+prediction = client.predictions.structure_and_binding.start(
+    model="boltz-2.1",
+    input=prediction_input,
+)
+```
+
+Local MSA and template files are embedded as base64 API sources. HTTPS MSA and template URLs are passed through as URL sources.
 
 ## License
 

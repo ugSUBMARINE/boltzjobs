@@ -10,10 +10,13 @@ https://github.com/jwohlwend/boltz/blob/main/docs/prediction.md
 
 from __future__ import annotations
 
+import base64
 import warnings
 from dataclasses import dataclass, field
 from itertools import islice
+from pathlib import Path
 from typing import Any, Self, override
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -34,6 +37,8 @@ from .utils import chain_id, IndentedDumper
 Sequence = ProteinChain | DnaChain | RnaChain | Ligand
 Constraint = Bond | Contact | Pocket
 Property = Affinity
+
+ApiDict = dict[str, Any]
 
 
 @dataclass
@@ -444,6 +449,425 @@ class Job:
 
         # Add the affinity property
         self.properties.append(Affinity(binder))
+
+    def _get_sequence_by_id(self, chain_id: str) -> Sequence:
+        """Return the sequence containing the given chain ID."""
+        for seq in self.sequences:
+            if chain_id in seq.ids:
+                return seq
+        raise ValueError(f"No sequence with id '{chain_id}' found.")
+
+    @staticmethod
+    def _is_url(value: str) -> bool:
+        """Return whether a string is an HTTPS URL supported by the Boltz API."""
+        return value.startswith("https://")
+
+    @staticmethod
+    def _suffix_from_source(source: str) -> str:
+        """Return a lowercase suffix from a local path or URL path."""
+        if Job._is_url(source):
+            return Path(urlsplit(source).path).suffix.lower()
+        return Path(source).expanduser().suffix.lower()
+
+    @staticmethod
+    def _base64_source(path: str, media_type: str) -> ApiDict:
+        """Read a local file and return a Boltz API base64 source object."""
+        file_path = Path(path).expanduser()
+        if not file_path.is_file():
+            raise ValueError(f"Local file does not exist: {path}")
+        return {
+            "type": "base64",
+            "data": base64.b64encode(file_path.read_bytes()).decode("ascii"),
+            "media_type": media_type,
+        }
+
+    @staticmethod
+    def _file_source(path_or_url: str, media_types: dict[str, str]) -> ApiDict:
+        """Return a URL or base64 source object for an API file field."""
+        suffix = Job._suffix_from_source(path_or_url)
+        if suffix not in media_types:
+            supported = ", ".join(sorted(media_types))
+            raise ValueError(
+                f"Unsupported file extension for Boltz API source: {path_or_url!r}. "
+                f"Supported extensions: {supported}"
+            )
+        if Job._is_url(path_or_url):
+            return {"type": "url", "url": path_or_url}
+        return Job._base64_source(path_or_url, media_types[suffix])
+
+    @staticmethod
+    def _api_modifications(seq: ProteinChain | DnaChain | RnaChain) -> list[ApiDict]:
+        """Convert 1-based local modifications to 0-based API modifications."""
+        modifications = []
+        for mod in seq.modifications:
+            if mod.position < 1:
+                raise ValueError(
+                    f"Modification positions are 1-based and must be greater than zero: {mod.position}"
+                )
+            modifications.append(
+                {
+                    "residue_index": mod.position - 1,
+                    "type": "ccd",
+                    "value": mod.ccd,
+                }
+            )
+        return modifications
+
+    @staticmethod
+    def _api_msa(msa: str) -> ApiDict:
+        """Convert local protein MSA settings to the Boltz API shape."""
+        if msa == "empty":
+            return {"type": "empty"}
+
+        suffix = Job._suffix_from_source(msa)
+        formats = {".a3m": "a3m", ".csv": "csv"}
+        if suffix not in formats:
+            raise ValueError(
+                f"Unsupported MSA extension for Boltz API source: {msa!r}. "
+                "Supported extensions: .a3m, .csv"
+            )
+
+        return {
+            "type": "custom",
+            "format": formats[suffix],
+            "source": Job._file_source(msa, {".a3m": "text/x-a3m", ".csv": "text/csv"}),
+        }
+
+    def _api_entity(self, seq: Sequence) -> ApiDict:
+        """Convert a package sequence object to a Boltz API entity."""
+        if isinstance(seq, ProteinChain):
+            entity: ApiDict = {
+                "type": "protein",
+                "value": seq.sequence,
+                "chain_ids": seq.ids,
+            }
+            if seq.cyclic:
+                entity["cyclic"] = seq.cyclic
+            if modifications := self._api_modifications(seq):
+                entity["modifications"] = modifications
+            if seq.msa is not None:
+                entity["msa"] = self._api_msa(seq.msa)
+            return entity
+
+        if isinstance(seq, DnaChain):
+            entity = {
+                "type": "dna",
+                "value": seq.sequence,
+                "chain_ids": seq.ids,
+            }
+            if seq.cyclic:
+                entity["cyclic"] = seq.cyclic
+            if modifications := self._api_modifications(seq):
+                entity["modifications"] = modifications
+            return entity
+
+        if isinstance(seq, RnaChain):
+            entity = {
+                "type": "rna",
+                "value": seq.sequence,
+                "chain_ids": seq.ids,
+            }
+            if seq.cyclic:
+                entity["cyclic"] = seq.cyclic
+            if modifications := self._api_modifications(seq):
+                entity["modifications"] = modifications
+            return entity
+
+        if isinstance(seq, Ligand):
+            if seq.smiles:
+                return {
+                    "type": "ligand_smiles",
+                    "value": seq.smiles,
+                    "chain_ids": seq.ids,
+                }
+            if seq.ccd:
+                return {
+                    "type": "ligand_ccd",
+                    "value": seq.ccd,
+                    "chain_ids": seq.ids,
+                }
+            raise ValueError("Ligand must define either a SMILES string or CCD code.")
+
+        raise TypeError(f"Unsupported sequence type: {type(seq).__name__}")
+
+    def _api_polymer_atom(self, chain_id: str, residue_index: int, atom_name: str) -> ApiDict:
+        """Convert a package atom tuple to a Boltz API atom reference."""
+        if residue_index < 1:
+            raise ValueError(
+                f"Residue indices are 1-based and must be greater than zero: {residue_index}"
+            )
+        return {
+            "type": "polymer_atom",
+            "chain_id": chain_id,
+            "residue_index": residue_index - 1,
+            "atom_name": atom_name,
+        }
+
+    def _api_ligand_atom(self, chain_id: str, atom_name: str) -> ApiDict:
+        """Convert a ligand atom reference, rejecting SMILES ligands."""
+        seq = self._get_sequence_by_id(chain_id)
+        if not isinstance(seq, Ligand):
+            raise ValueError(
+                f"Atom-level reference with atom name requires a ligand chain, got {chain_id!r}."
+            )
+        if seq.smiles:
+            raise ValueError(
+                f"Atom-level ligand references are not supported for SMILES ligand chain {chain_id!r}; use CCD ligands."
+            )
+        return {
+            "type": "ligand_atom",
+            "chain_id": chain_id,
+            "atom_name": atom_name,
+        }
+
+    def _api_atom(self, atom: tuple[str, int, str]) -> ApiDict:
+        """Convert a package bond atom to a Boltz API atom reference."""
+        chain_id, residue_index, atom_name = atom
+        seq = self._get_sequence_by_id(chain_id)
+        if isinstance(seq, Ligand):
+            return self._api_ligand_atom(chain_id, atom_name)
+        return self._api_polymer_atom(chain_id, residue_index, atom_name)
+
+    def _api_contact_token(self, token: tuple[str, int | str]) -> ApiDict:
+        """Convert a package contact token to a Boltz API contact token."""
+        chain_id, residue_or_atom = token
+        seq = self._get_sequence_by_id(chain_id)
+        if isinstance(residue_or_atom, int):
+            if isinstance(seq, Ligand):
+                raise ValueError(
+                    f"Ligand contact token for chain {chain_id!r} must use an atom name, not a residue index."
+                )
+            if residue_or_atom < 1:
+                raise ValueError(
+                    f"Residue indices are 1-based and must be greater than zero: {residue_or_atom}"
+                )
+            return {
+                "type": "polymer_contact",
+                "chain_id": chain_id,
+                "residue_index": residue_or_atom - 1,
+            }
+
+        if not isinstance(seq, Ligand):
+            raise ValueError(
+                f"Polymer contact token for chain {chain_id!r} must use a residue index, not an atom name."
+            )
+        if seq.smiles:
+            raise ValueError(
+                f"Atom-level ligand references are not supported for SMILES ligand chain {chain_id!r}; use CCD ligands."
+            )
+        return {
+            "type": "ligand_contact",
+            "chain_id": chain_id,
+            "atom_name": residue_or_atom,
+        }
+
+    def _api_bond(self, bond: Bond) -> ApiDict:
+        """Convert a bond constraint to the Boltz API top-level bonds list."""
+        return {
+            "atom1": self._api_atom(bond.atom1),
+            "atom2": self._api_atom(bond.atom2),
+        }
+
+    def _api_contact(self, contact: Contact) -> ApiDict:
+        """Convert a contact constraint to the Boltz API constraint shape."""
+        d: ApiDict = {
+            "type": "contact",
+            "token1": self._api_contact_token(contact.token1),
+            "token2": self._api_contact_token(contact.token2),
+            "max_distance_angstrom": contact.max_distance,
+        }
+        if contact.force:
+            d["force"] = contact.force
+        return d
+
+    def _api_pocket(self, pocket: Pocket) -> ApiDict:
+        """Convert a pocket constraint to the Boltz API constraint shape."""
+        contact_residues: dict[str, list[int]] = {}
+        for contact_chain_id, residue_index in pocket.contacts:
+            seq = self._get_sequence_by_id(contact_chain_id)
+            if isinstance(seq, Ligand) or not isinstance(residue_index, int):
+                raise ValueError(
+                    "Pocket contacts for Boltz API output must be polymer residue positions."
+                )
+            if residue_index < 1:
+                raise ValueError(
+                    f"Residue indices are 1-based and must be greater than zero: {residue_index}"
+                )
+            contact_residues.setdefault(contact_chain_id, []).append(residue_index - 1)
+
+        d: ApiDict = {
+            "type": "pocket",
+            "binder_chain_id": pocket.binder,
+            "contact_residues": contact_residues,
+            "max_distance_angstrom": pocket.max_distance,
+        }
+        if pocket.force:
+            d["force"] = pocket.force
+        return d
+
+    def _api_template(self, template: Template) -> ApiDict:
+        """Convert a local template definition to the Boltz API template shape."""
+        if not template.chain_id:
+            raise ValueError("Boltz API templates require at least one chain_id.")
+
+        template_ids = template.template_id or template.chain_id
+        if len(template.chain_id) != len(template_ids):
+            raise ValueError(
+                "Boltz API templates require matching chain_id and template_id lengths."
+            )
+
+        path_or_url = template.cif or template.pdb
+        if path_or_url is None:
+            raise ValueError("Template must define either a CIF or PDB source.")
+
+        d: ApiDict = {
+            "template_structure": self._file_source(
+                path_or_url,
+                {".cif": "chemical/x-cif", ".pdb": "chemical/x-pdb"},
+            ),
+            "template_chains": [
+                {"input_chain_id": input_id, "template_chain_id": template_id}
+                for input_id, template_id in zip(template.chain_id, template_ids)
+            ],
+        }
+        if template.force:
+            d["force_threshold_angstroms"] = template.threshold
+        return d
+
+    def _api_binding(self, protein_binder_chain_ids: str | list[str] | None) -> ApiDict | None:
+        """Return the optional Boltz API binding object."""
+        affinities = [prop for prop in self.properties if isinstance(prop, Affinity)]
+        if protein_binder_chain_ids is not None and affinities:
+            raise ValueError(
+                "Cannot request both ligand-protein affinity and protein-protein binding in one Boltz API input."
+            )
+
+        if protein_binder_chain_ids is not None:
+            binder_ids = (
+                [protein_binder_chain_ids]
+                if isinstance(protein_binder_chain_ids, str)
+                else protein_binder_chain_ids
+            )
+            if not binder_ids:
+                raise ValueError("protein_binder_chain_ids cannot be empty.")
+            for chain_id in binder_ids:
+                seq = self._get_sequence_by_id(chain_id)
+                if not isinstance(seq, ProteinChain):
+                    raise ValueError(
+                        f"Protein-protein binding requires protein binder chains, got {chain_id!r}."
+                    )
+            return {
+                "type": "protein_protein_binding",
+                "binder_chain_ids": binder_ids,
+            }
+
+        if not affinities:
+            return None
+
+        binder = affinities[0].binder
+        binder_seq = self._get_sequence_by_id(binder)
+        if not isinstance(binder_seq, Ligand):
+            raise ValueError(
+                f"Ligand-protein binding requires a ligand binder chain, got {binder!r}."
+            )
+        if len(binder_seq.ids) != 1:
+            raise ValueError(
+                "Ligand-protein binding requires the ligand entity to have exactly one chain ID."
+            )
+        for seq in self.sequences:
+            if not isinstance(seq, (ProteinChain, Ligand)):
+                raise ValueError(
+                    "Ligand-protein binding in the Boltz API only supports complexes containing proteins and ligands."
+                )
+        return {
+            "type": "ligand_protein_binding",
+            "binder_chain_id": binder,
+        }
+
+    @staticmethod
+    def _validate_boltz_api_options(
+        num_samples: int | None,
+        recycling_steps: int | None,
+        sampling_steps: int | None,
+        step_scale: float | None,
+    ) -> None:
+        """Validate Boltz API prediction options."""
+        if num_samples is not None and not (1 <= num_samples <= 10):
+            raise ValueError("num_samples must be between 1 and 10.")
+        if recycling_steps is not None and recycling_steps < 1:
+            raise ValueError("recycling_steps must be greater than or equal to 1.")
+        if sampling_steps is not None and sampling_steps < 50:
+            raise ValueError("sampling_steps must be greater than or equal to 50.")
+        if step_scale is not None and not (1.3 <= step_scale <= 2.0):
+            raise ValueError("step_scale must be between 1.3 and 2.0.")
+
+    def to_boltz_api_input(
+        self,
+        *,
+        num_samples: int | None = None,
+        recycling_steps: int | None = None,
+        sampling_steps: int | None = None,
+        step_scale: float | None = None,
+        protein_binder_chain_ids: str | list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Convert the job to a Boltz API structure-and-binding input object.
+
+        The returned dictionary is the `input` body for
+        `client.predictions.structure_and_binding.start(model=..., input=...)`.
+        Unlike the YAML schema, the Boltz API uses 0-based residue indices.
+        """
+        self._check_ids()
+        if not self.sequences:
+            raise ValueError("Empty list of sequences.")
+
+        self._validate_boltz_api_options(
+            num_samples, recycling_steps, sampling_steps, step_scale
+        )
+
+        d: ApiDict = {
+            "entities": [self._api_entity(seq) for seq in self.sequences],
+        }
+
+        if binding := self._api_binding(protein_binder_chain_ids):
+            d["binding"] = binding
+
+        bonds = [
+            self._api_bond(constraint)
+            for constraint in self.constraints
+            if isinstance(constraint, Bond)
+        ]
+        if bonds:
+            d["bonds"] = bonds
+
+        constraints = [
+            self._api_contact(constraint)
+            if isinstance(constraint, Contact)
+            else self._api_pocket(constraint)
+            for constraint in self.constraints
+            if isinstance(constraint, (Contact, Pocket))
+        ]
+        if constraints:
+            d["constraints"] = constraints
+
+        if self.templates:
+            if len(self.templates) > 4:
+                raise ValueError("Boltz API supports at most 4 templates.")
+            d["templates"] = [self._api_template(template) for template in self.templates]
+
+        model_options: ApiDict = {}
+        if recycling_steps is not None:
+            model_options["recycling_steps"] = recycling_steps
+        if sampling_steps is not None:
+            model_options["sampling_steps"] = sampling_steps
+        if step_scale is not None:
+            model_options["step_scale"] = step_scale
+        if model_options:
+            d["model_options"] = model_options
+
+        if num_samples is not None:
+            d["num_samples"] = num_samples
+
+        return d
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the Job to a dictionary suitable for JSON serialization."""
